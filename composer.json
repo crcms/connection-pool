@@ -1,0 +1,31 @@
+{
+    "name": "crcms/connection-pool",
+    "description": "CRCMS connection pool",
+	"keywords": ["pool", "crcms"],
+	"homepage": "https://github.com/crcms/connection-pool",
+    "license": "MIT",
+    "require": {
+        "php":">=7.1"
+    },
+	"autoload": {
+        "files": [
+        ],
+        "psr-4": {
+            "CrCms\\Foundation\\ConnectionPool": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "CrCms\\Foundation\\ConnectionPool\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "CrCms\\Foundation\\ConnectionPool\\PoolServiceProvider"
+            ],
+            "aliases": {
+            }
+        }
+    }
+}
