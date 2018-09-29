@@ -11,7 +11,7 @@
         "files": [
         ],
         "psr-4": {
-            "CrCms\\Foundation\\ConnectionPool": "src/"
+            "CrCms\\Foundation\\ConnectionPool\\": "src/"
         }
     },
     "autoload-dev": {
