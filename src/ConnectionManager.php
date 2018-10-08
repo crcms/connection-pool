@@ -62,10 +62,10 @@ class ConnectionManager
      * @var array
      */
     protected $poolConfig = [
-        'max_idle_number' => 500,//最大空闲数
-        'min_idle_number' => 50,//最小空闲数
-        'max_connection_number' => 400,//最大连接数
-        'max_connection_time' => 2,//最大连接时间
+        'max_idle_number' => 1000,//最大空闲数
+        'min_idle_number' => 100,//最小空闲数
+        'max_connection_number' => 800,//最大连接数
+        'max_connection_time' => 1,//最大连接时间
     ];
 
     /**
