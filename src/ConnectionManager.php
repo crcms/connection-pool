@@ -12,7 +12,7 @@ namespace CrCms\Foundation\ConnectionPool;
 use CrCms\Foundation\ConnectionPool\Contracts\Connection;
 use CrCms\Foundation\ConnectionPool\Contracts\ConnectionFactory;
 use CrCms\Foundation\ConnectionPool\Contracts\ConnectionPool;
-use Illuminate\Foundation\Application;
+use Illuminate\Container\Container;
 use InvalidArgumentException;
 use RuntimeException;
 use RangeException;
@@ -72,7 +72,7 @@ class ConnectionManager
      * ConnectionManager constructor.
      * @param Application $app
      */
-    public function __construct(Application $app)
+    public function __construct(Container $app)
     {
         $this->app = $app;
     }
