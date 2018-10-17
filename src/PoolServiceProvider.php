@@ -40,7 +40,7 @@ class PoolServiceProvider extends ServiceProvider
 
         } else {
             $this->publishes([
-                $this->packagePath . 'config' => config_path(),
+                $this->packagePath . 'config/config.php' => config_path($this->namespaceName . ".php"),
             ]);
         }
     }
