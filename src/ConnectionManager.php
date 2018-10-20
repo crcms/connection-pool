@@ -93,14 +93,14 @@ class ConnectionManager
     public function connection(ConnectionFactory $factory, $name = null)
     {
         if (is_array($name)) {
-            list($name, $configure) = [$name['name'], $name];
+            list($name, $configure) = [$name['name'] ?? $this->defaultDriver(), $name];
         } else {
             $name = $name ? $name : $this->defaultDriver();
             $configure = $this->configuration($name);
         }
 
         //连接准备
-        $this->connectionReady($name ? $name : $this->defaultDriver(), $configure, $factory);
+        $this->connectionReady($name, $configure, $factory);
 
         //连接记录
         $this->connectionRecord();
