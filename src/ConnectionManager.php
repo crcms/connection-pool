@@ -16,6 +16,7 @@ use Illuminate\Container\Container;
 use InvalidArgumentException;
 use RuntimeException;
 use RangeException;
+use OutOfRangeException;
 
 /**
  * Class ConnectionManager
@@ -34,43 +35,20 @@ class ConnectionManager
     protected $pools = [];
 
     /**
-     * @var ConnectionPool
-     */
-    protected $pool;
-
-    /**
-     * @var Connection
-     */
-    protected $connection;
-
-    /**
-     * @var ConnectionFactory
-     */
-    protected $factory;
-
-    /**
-     * @var int
-     */
-    protected $connectionNumber = 0;
-
-    /**
-     * @var int
-     */
-    protected $connectionTime = 0;
-
-    /**
      * @var array
      */
     protected $poolConfig = [
-        'max_idle_number' => 1000,//最大空闲数
-        'min_idle_number' => 100,//最小空闲数
-        'max_connection_number' => 800,//最大连接数
-        'max_connection_time' => 1,//最大连接时间
+        'pool' => [
+            'max_idle_number' => 1000,//最大空闲数
+            'min_idle_number' => 100,//最小空闲数
+            'max_connection_number' => 800,//最大连接数
+            'max_connection_time' => 1,//最大连接时间
+        ]
     ];
 
     /**
      * ConnectionManager constructor.
-     * @param Application $app
+     * @param Container $app
      */
     public function __construct(Container $app)
     {
@@ -78,19 +56,32 @@ class ConnectionManager
     }
 
     /**
-     * @return ConnectionPool
+     * @param null $name
+     * @return Connection
      */
-    public function getPool(): ConnectionPool
+    public function connection($name = null): Connection
     {
-        return $this->pool;
+        $resolve = $this->resolveConfig($name);
+        /* @var string $name */
+        /* @var array $configure */
+        list($name, $configure) = array_values($resolve);
+
+        $this->createPoolIfNotExists($name, $configure);
+
+        if ($this->pools[$name]->getTasksCount() > $configure['max_connection_number']) {
+            throw new RuntimeException('More than the maximum number of connections');
+        }
+
+        $this->fillConnectionIfNotExists($name, $configure);
+
+        return $this->effectiveConnection($name, $this->pools[$name]);
     }
 
     /**
-     * @param ConnectionFactory $factory
-     * @param null|array|string $name
-     * @return Connection
+     * @param null $name
+     * @return array
      */
-    public function connection(ConnectionFactory $factory, $name = null)
+    protected function resolveConfig($name = null): array
     {
         if (is_array($name)) {
             list($name, $configure) = [$name['name'] ?? $this->defaultDriver(), $name];
@@ -99,58 +90,28 @@ class ConnectionManager
             $configure = $this->configuration($name);
         }
 
-        //连接准备
-        $this->connectionReady($name, $configure, $factory);
-
-        //连接记录
-        $this->connectionRecord();
-
-        //连接回收，超时检测
-        $this->connectionRecycling();
-
-        return $this->effectiveConnection();
-    }
-
-    /**
-     * @param Connection $connection
-     * @return void
-     */
-    public function close(Connection $connection): void
-    {
-        if ($connection->isRelease() || $connection->isAlive()) {
-            $connection->makeRecycling();
-            $this->pool->release($connection);
-        } else {
-            $this->pool->destroy($connection);
-        }
+        return compact('name', 'configure');
     }
 
     /**
      * @return Connection
      */
-    protected function effectiveConnection(): Connection
+    protected function effectiveConnection(string $name, ConnectionPool $pool): Connection
     {
-        if ($this->pool->getTasksCount() > $this->poolConfig['max_connection_number']) {
-            throw new RuntimeException('More than the maximum number of connections');
-        }
+        while ($pool->has()) {
+            $connection = $pool->get();
 
-        if (!$this->pool->has()) {
-            $this->makeConnections($this->pool);
-        }
-
-        while ($this->pool->has()) {
-
-            $connection = $this->pool->get();
+            //激活当前连接
+            $connection->makeActive();
 
             //断线重连机制
             if (!$connection->isAlive()) {
-                $connection->reconnection();
-            }
-
-            //二次重连失败，直接销毁
-            if (!$connection->isAlive()) {
-                $this->pool->destroy($connection);
-                continue;
+                $connection->reconnect();
+                //二次重连失败，直接销毁
+                if (!$connection->isAlive()) {
+                    $pool->destroy($connection);
+                    continue;
+                }
             }
 
             return $connection;
@@ -160,86 +121,65 @@ class ConnectionManager
     }
 
     /**
-     * 连接准备
-     *
-     * @param string $name
+     * @param Connection $connection
+     * @return bool
+     */
+    protected function activityTimeout(Connection $connection): bool
+    {
+        return (time() - $connection->getLastActivityTime()) > $this->poolConfig['max_connection_time'];
+    }
+
+    /**
+     * @param $name
      * @param array $configure
-     * @param ConnectionFactory $factory
-     */
-    protected function connectionReady(string $name, array $configure, ConnectionFactory $factory)
-    {
-        $this->factory = $factory;
-        $this->poolConfig = array_merge($this->poolConfig, $configure);
-        $this->pool = $this->pool($name);
-    }
-
-    /**
-     * 任务连接回收
-     *
+     * @param ConnectionPool $pool
      * @return void
      */
-    protected function connectionRecycling(): void
+    protected function makeConnections($name, array $configure, ConnectionPool $pool): void
     {
-        /* @var Connection $connection */
-        $currentTime = time();
-        foreach ($this->pool->getTasks() as $connection) {
-            if (
-                $connection->isRelease() ||
-                $currentTime - $connection->getLaseActivityTime() > $this->poolConfig['max_connection_time']
-            ) {
-                $this->pool->release($connection);
-            }
-
-            if (!$connection->isAlive()) {
-                $this->pool->destroy($connection);
-            }
+        /* @var ConnectionFactory $factory */
+        if (!class_exists($configure['factory'])) {
+            throw new OutOfRangeException("The facotry[{$configure['factory']}] not found");
         }
-    }
+        $factory = $this->app->make($configure['factory']);
 
-    /**
-     * @return void
-     */
-    protected function connectionRecord(): void
-    {
-        $this->connectionTime = time();
-        $this->connectionNumber += 1;
-    }
+        /* @var array $options */
+        $options = $this->app->make('config')->get("{$name}.connections.{$configure['connection']}");
+        if (empty($options)) {
+            throw new OutOfRangeException("The driver[{$name}] connection not found");
+        }
 
-    /**
-     * @param ConnectionFactory $factory
-     * @return void
-     */
-    protected function makeConnections(ConnectionPool $pool): void
-    {
         $count = min(
-            $this->poolConfig['max_idle_number'] - $pool->getIdleQueuesCount(),
-            $this->poolConfig['min_idle_number'] + $pool->getIdleQueuesCount()
+            $configure['max_idle_number'] - $pool->getIdleQueuesCount(),
+            $configure['min_idle_number'] + $pool->getIdleQueuesCount()
         );
-
         while ($count) {
-            $pool->put($this->factory->make());
+            $pool->put($factory->make($options));
             $count -= 1;
         }
     }
 
     /**
      * @param string $name
-     * @return ConnectionPool
+     * @param array $configure
+     * @return void
      */
-    protected function pool(string $name): ConnectionPool
+    protected function createPoolIfNotExists(string $name, array $configure): void
     {
-        return empty($this->pools[$name]) ? $this->initPool($name) : $this->pools[$name];
+        if (!isset($this->pools[$name])) {
+            $this->makeConnections($name, $configure, $this->app->make('pool.pool'));
+        }
     }
 
     /**
      * @param string $name
-     * @return ConnectionPool
+     * @param array $configure
      */
-    protected function initPool(string $name): ConnectionPool
+    protected function fillConnectionIfNotExists(string $name, array $configure)
     {
-        $this->pools[$name] = $this->app->make('pool.pool');
-        $this->makeConnections($this->pools[$name]);
-        return $this->pools[$name];
+        if (!$this->pools[$name]->has()) {
+            $this->makeConnections($name, $configure, $this->pools[$name]);
+        }
     }
 
     /**
@@ -263,6 +203,24 @@ class ConnectionManager
             //throw new InvalidArgumentException("Pool config[{$name}] not found");
         }
 
-        return $connections[$name];
+        return array_merge($this->poolConfig, $connections[$name]);
+    }
+
+    /**
+     * @param Connection $connection
+     */
+    public function disconnection(Connection $connection): void
+    {
+        if (!$connection->isAlive()) {
+            $this->pool->destroy($connection);
+            return;
+        }
+
+        if (
+            $connection->isRelease() ||
+            $this->activityTimeout($connection)
+        ) {
+            $this->pool->release($connection);
+        }
     }
 }

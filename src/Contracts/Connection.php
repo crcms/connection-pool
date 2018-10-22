@@ -33,7 +33,7 @@ interface Connection
     /**
      * @return void
      */
-    public function makeRecycling(): void;
+    public function makeActive(): void;
 
     /**
      * @return bool
@@ -48,34 +48,33 @@ interface Connection
     /**
      * @return void
      */
-    public function markDead(): void;
+    public function makeDead(): void;
 
     /**
      * @return void
      */
-    public function reconnection(): void;
-
-    /**
-     * @param string $uri
-     * @param array $data
-     * @return Connection
-     */
-    public function request(string $uri, array $data = []): Connection;
+    public function reconnect(): void;
 
     /**
      * @return mixed
      */
-    public function getResponse();
+    public function connect();
 
     /**
+     * @return void
+     */
+    public function disconnect(): void;
+
+    /**
+     * @param callable $callable
      * @return mixed
      */
-    public function getContent();
+    public function handle(callable $callable);
 
     /**
      * @return int
      */
-    public function getLaseActivityTime(): int;
+    public function getLastActivityTime(): int;
 
     /**
      * @return int

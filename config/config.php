@@ -26,10 +26,14 @@ return [
 
     'connections' => [
         'client' => [
-            'max_idle_number' => 1000,
-            'min_idle_number' => 100,
-            'max_connection_number' => 800,
-            'max_connection_time' => 1,
+            'pool' => [
+                'max_idle_number' => 1000,
+                'min_idle_number' => 100,
+                'max_connection_number' => 800,
+                'max_connection_time' => 1,
+            ],
+            'factory' => 'factory',
+            'connection' => 'http',
         ],
     ],
 ];

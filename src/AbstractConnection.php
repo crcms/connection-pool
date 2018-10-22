@@ -68,10 +68,10 @@ abstract class AbstractConnection implements ConnectionContract
      * AbstractConnection constructor.
      * @param array $config
      */
-    public function __construct(Connector $connector, array $config = [])
+    public function __construct(array $config)
     {
-        $this->connector = $connector;
         $this->config = $config;
+        $this->connector = $this->reconnect();
         $this->updateLaseActivityTime();
     }
 
@@ -86,7 +86,7 @@ abstract class AbstractConnection implements ConnectionContract
     /**
      * @return int
      */
-    public function getLaseActivityTime(): int
+    public function getLastActivityTime(): int
     {
         return $this->lastActivityTime;
     }
@@ -118,7 +118,7 @@ abstract class AbstractConnection implements ConnectionContract
     /**
      * @return void
      */
-    public function markDead(): void
+    public function makeDead(): void
     {
         $this->isAlive = false;
     }
@@ -142,11 +142,11 @@ abstract class AbstractConnection implements ConnectionContract
     }
 
     /**
-     * 回收连接
+     * 激活连接
      *
      * @return void
      */
-    public function makeRecycling(): void
+    public function makeActive(): void
     {
         $this->isRelease = false;
     }
@@ -154,7 +154,7 @@ abstract class AbstractConnection implements ConnectionContract
     /**
      * @return void
      */
-    protected function updateLaseActivityTime(): void
+    protected function updateLastActivityTime(): void
     {
         $this->lastActivityTime = time();
     }
@@ -168,9 +168,9 @@ abstract class AbstractConnection implements ConnectionContract
     }
 
     /**
-     * @return Connector
+     * @return mixed
      */
-    public function getConnector(): Connector
+    public function getConnector()
     {
         return $this->connector;
     }
@@ -178,57 +178,37 @@ abstract class AbstractConnection implements ConnectionContract
     /**
      * @return void
      */
-    public function reconnection(): void
+    public function reconnect(): void
     {
-        // @todo
+        $this->connector = $this->connect();
+        $this->makeAlive();
     }
 
     /**
+     * @return void
+     */
+    public function disconnect(): void
+    {
+        $this->connector = null;
+        $this->makeDead();
+    }
+
+    /**
+     * @param callable $callable
      * @return mixed
      */
-    public function getResponse()
+    public function handle(callable $callable)
     {
-        return $this->response;
-    }
-
-    /**
-     * @param string $uri
-     * @param array $data
-     * @return ConnectionContract
-     * @throws Exception
-     */
-    public function request(string $uri, array $data = []): ConnectionContract
-    {
-        $this->updateLaseActivityTime();
+        $this->updateLastActivityTime();
         $this->increaseConnectionNumber();
 
         try {
-            return $this->send($uri, $this->resolve($data));
-        } catch (ConnectionException $exception) {
-            $this->markDead();
-            throw $exception;
-        } catch (Exception $exception) {
-            throw $exception;
+            return call_user_func($callable, $this);
         } finally {
-            $this->connector->close();
+            //回收资源
+            $this->makeRelease();
         }
     }
-
-    /**
-     * @param array $data
-     * @return array
-     */
-    protected function resolve(array $data): array
-    {
-        return $data;
-    }
-
-    /**
-     * @param string $url
-     * @param array $data
-     * @return AbstractConnection
-     */
-    abstract protected function send(string $url, array $data): AbstractConnection;
 
     /**
      * @param string $name

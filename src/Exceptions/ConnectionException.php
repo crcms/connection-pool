@@ -34,7 +34,7 @@ class ConnectionException extends RuntimeException
     public function __construct(Connection $connection, string $message = "Connection failed", int $code = 0, Throwable $previous = null)
     {
         $this->connection = $connection;
-
+        $this->makeConnectionDead();
         parent::__construct($message, $code, $previous);
     }
 
@@ -44,5 +44,13 @@ class ConnectionException extends RuntimeException
     public function getConnection(): Connection
     {
         return $this->connection;
+    }
+
+    /**
+     * @return void
+     */
+    protected function makeConnectionDead()
+    {
+        $this->connection->makeDead();
     }
 }
