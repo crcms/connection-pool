@@ -3,6 +3,7 @@
 namespace CrCms\Tests\ConnectionPool;
 
 use CrCms\Foundation\ConnectionPool\ConnectionManager;
+use CrCms\Foundation\ConnectionPool\PoolManager;
 use CrCms\Tests\CreatesApplication;
 use Illuminate\Foundation\Testing\TestCase;
 
@@ -30,7 +31,7 @@ class PoolManagerTest extends TestCase
 
         config([
             'pool.connections.client.factory' => \CrCms\Tests\ConnectionPool\Factory::class,
-            'pool.connections.client.pool' => [
+            'pool.connections.client' => [
                 'max_idle_number' => 1000,//最大空闲数
                 'min_idle_number' => 10,//最小空闲数
                 'max_connection_number' => 10,
@@ -41,9 +42,9 @@ class PoolManagerTest extends TestCase
     public function testConnection()
     {
         $this->config();
-        /* @var ConnectionManager $manager */
+        /* @var PoolManager $manager */
         $manager = $this->app->make('pool.manager');
-        $connection = $manager->connection('client');
+        $connection = $manager->connection(new \CrCms\Tests\ConnectionPool\Factory(),'client');
         $this->assertInstanceOf(Connection::class,$connection);
         dump('Connection Before Alive:true');
         $this->assertEquals(true,$connection->isAlive());
@@ -63,7 +64,7 @@ class PoolManagerTest extends TestCase
 
         $connections = [];
         for ($i=0;$i<=8;$i++) {
-            $connections[] = ($manager->connection('client'));
+            $connections[] = ($manager->connection(new \CrCms\Tests\ConnectionPool\Factory(),'client'));
         }
 
         $this->assertEquals(9,$manager->getPool('client')->getTasksCount());

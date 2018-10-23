@@ -25,13 +25,9 @@ return [
 
     'connections' => [
         'default' => [
-            'pool' => [
-                'max_idle_number' => 1000,
-                'min_idle_number' => 100,
-                'max_connection_number' => 800,
-            ],
-            'factory' => 'You\'s factory',
-            //'connection' => 'You\'s default connection',
+            'max_idle_number' => 1000,
+            'min_idle_number' => 100,
+            'max_connection_number' => 800,
         ],
     ],
 ];

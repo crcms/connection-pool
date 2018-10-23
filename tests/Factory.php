@@ -22,29 +22,25 @@ class Factory implements ConnectionFactoryContract
     /**
      * @return ConnectionContract
      */
-    public function make(string $name): ConnectionContract
+    public function make(): ConnectionContract
     {
-        return $this->createConnection($name);
+        return $this->createConnection();
     }
 
     /**
      * @param array $config
      * @return ConnectionContract
      */
-    protected function createConnection(string $name): ConnectionContract
+    protected function createConnection(): ConnectionContract
     {
-        $config = [];
 
-        switch ($name) {
-            case 'client':
-                return new Connection([
-                    'host' => '',
-                    'port' => '',
-                    'settings' => [
-                        'timeout' => 1,
-                    ],
-                ]);
-        }
+        return new Connection([
+            'host' => '',
+            'port' => '',
+            'settings' => [
+                'timeout' => 1,
+            ],
+        ]);
 
         throw new InvalidArgumentException("Unsupported driver [{$name}]");
     }

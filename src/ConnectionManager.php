@@ -4,6 +4,7 @@ namespace CrCms\Foundation\ConnectionPool;
 
 use BadMethodCallException;
 use CrCms\Foundation\ConnectionPool\Contracts\Connection;
+use CrCms\Foundation\ConnectionPool\Contracts\ConnectionFactory;
 
 /**
  * Class ConnectionManager
@@ -22,6 +23,11 @@ class ConnectionManager
     protected $connection;
 
     /**
+     * @var string
+     */
+    protected $name;
+
+    /**
      * ConnectionManager constructor.
      * @param PoolManager $manager
      */
@@ -31,13 +37,15 @@ class ConnectionManager
     }
 
     /**
+     * @param ConnectionFactory $factory
      * @param null $name
      * @return ConnectionManager
      */
-    public function connection($name = null): self
+    public function connection(ConnectionFactory $factory, $name = null): self
     {
         if (is_null($this->connection)) {
-            $this->connection = $this->manager->connection($name);
+            $this->name = $name;
+            $this->connection = $this->manager->connection($factory, $name);
         }
 
         return $this;
@@ -48,7 +56,7 @@ class ConnectionManager
      */
     public function disconnection(): void
     {
-        $this->manager->disconnection($this->connection);
+        $this->manager->disconnection($this->connection, $this->name);
         $this->connection = null;
     }
 

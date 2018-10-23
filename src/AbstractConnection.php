@@ -22,11 +22,6 @@ use Exception;
 abstract class AbstractConnection implements ConnectionContract
 {
     /**
-     * @var mixed
-     */
-    protected $response;
-
-    /**
      * @var Connector
      */
     protected $connector;
@@ -64,7 +59,7 @@ abstract class AbstractConnection implements ConnectionContract
     public function __construct(array $config)
     {
         $this->config = $config;
-        $this->connector = $this->reconnect();
+        $this->reconnect();
         $this->updateLastActivityTime();
     }
 

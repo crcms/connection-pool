@@ -38,11 +38,9 @@ class PoolManager
      * @var array
      */
     protected $poolConfig = [
-        'pool' => [
-            'max_idle_number' => 1000,//最大空闲数
-            'min_idle_number' => 100,//最小空闲数
-            'max_connection_number' => 800,//最大连接数
-        ]
+        'max_idle_number' => 1000,//最大空闲数
+        'min_idle_number' => 100,//最小空闲数
+        'max_connection_number' => 800,//最大连接数
     ];
 
     /**
@@ -55,10 +53,11 @@ class PoolManager
     }
 
     /**
+     * @param ConnectionFactory $factory
      * @param null $name
      * @return Connection
      */
-    public function connection($name = null): Connection
+    public function connection(ConnectionFactory $factory, $name = null): Connection
     {
         $resolve = $this->resolveConfig($name);
         /* @var string $name */
@@ -67,11 +66,11 @@ class PoolManager
 
         $this->createPoolIfNotExists($name);
 
-        if ($this->pools[$name]->getTasksCount() > $configure['pool']['max_connection_number']) {
+        if ($this->pools[$name]->getTasksCount() > $configure['max_connection_number']) {
             throw new RuntimeException('More than the maximum number of connections');
         }
 
-        $this->fillConnectionIfNotExists($name, $configure);
+        $this->fillConnectionIfNotExists($name, $configure, $factory);
 
         return $this->effectiveConnection($this->pools[$name]);
     }
@@ -120,15 +119,16 @@ class PoolManager
      * @param $name
      * @param array $configure
      * @param ConnectionPool $pool
+     * @param ConnectionFactory $factory
      * @return void
      */
-    protected function makeConnections($name, array $configure, ConnectionPool $pool): void
+    protected function makeConnections($name, array $configure, ConnectionPool $pool, ConnectionFactory $factory): void
     {
         /* @var ConnectionFactory $factory */
-        if (!class_exists($configure['factory'])) {
+        /*if (!class_exists($configure['factory'])) {
             throw new OutOfRangeException("The facotry[{$configure['factory']}] does not exist");
-        }
-        $factory = $this->app->make($configure['factory']);
+        }*/
+        //$factory = $this->app->make($configure['factory']);
 
         /* @var array $options */
         /*$options = $this->app->make('config')->get("{$name}.connections.{$configure['connection']}");
@@ -137,11 +137,11 @@ class PoolManager
         }*/
 
         $count = min(
-            $configure['pool']['max_idle_number'] - $pool->getIdleQueuesCount(),
-            $configure['pool']['min_idle_number'] + $pool->getIdleQueuesCount()
+            $configure['max_idle_number'] - $pool->getIdleQueuesCount(),
+            $configure['min_idle_number'] + $pool->getIdleQueuesCount()
         );
         while ($count) {
-            $pool->put($factory->make($name));
+            $pool->put($factory->make());
             $count -= 1;
         }
     }
@@ -160,11 +160,13 @@ class PoolManager
     /**
      * @param string $name
      * @param array $configure
+     * @param ConnectionFactory $factory
+     * @return void
      */
-    protected function fillConnectionIfNotExists(string $name, array $configure)
+    protected function fillConnectionIfNotExists(string $name, array $configure, ConnectionFactory $factory): void
     {
         if (!$this->pools[$name]->has()) {
-            $this->makeConnections($name, $configure, $this->pools[$name]);
+            $this->makeConnections($name, $configure, $this->pools[$name], $factory);
         }
     }
 

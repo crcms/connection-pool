@@ -9,8 +9,7 @@ namespace CrCms\Foundation\ConnectionPool\Contracts;
 interface ConnectionFactory
 {
     /**
-     * @param string $name
      * @return Connection
      */
-    public function make(string $name): Connection;
+    public function make(): Connection;
 }
