@@ -131,17 +131,17 @@ class PoolManager
         $factory = $this->app->make($configure['factory']);
 
         /* @var array $options */
-        $options = $this->app->make('config')->get("{$name}.connections.{$configure['connection']}");
+        /*$options = $this->app->make('config')->get("{$name}.connections.{$configure['connection']}");
         if (empty($options)) {
             throw new OutOfRangeException("The driver[{$name}] connection not found");
-        }
+        }*/
 
         $count = min(
             $configure['pool']['max_idle_number'] - $pool->getIdleQueuesCount(),
             $configure['pool']['min_idle_number'] + $pool->getIdleQueuesCount()
         );
         while ($count) {
-            $pool->put($factory->make($options));
+            $pool->put($factory->make($name));
             $count -= 1;
         }
     }

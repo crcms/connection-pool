@@ -9,7 +9,6 @@
 
 namespace CrCms\Tests\ConnectionPool;
 
-use CrCms\Foundation\ConnectionPool\AbstractConnectionFactory;
 use CrCms\Foundation\ConnectionPool\Contracts\ConnectionFactory as ConnectionFactoryContract;
 use CrCms\Foundation\ConnectionPool\Contracts\Connection as ConnectionContract;
 use InvalidArgumentException;
@@ -18,27 +17,35 @@ use InvalidArgumentException;
  * Class Factory
  * @package CrCms\Foundation\ConnectionPool\Tests
  */
-class Factory extends AbstractConnectionFactory implements ConnectionFactoryContract
+class Factory implements ConnectionFactoryContract
 {
     /**
      * @return ConnectionContract
      */
-    public function make(array $config): ConnectionContract
+    public function make(string $name): ConnectionContract
     {
-        return $this->createConnection($config);
+        return $this->createConnection($name);
     }
 
     /**
      * @param array $config
      * @return ConnectionContract
      */
-    protected function createConnection(array $config): ConnectionContract
+    protected function createConnection(string $name): ConnectionContract
     {
-        switch ($config['driver']) {
-            case 'http':
-                return new Connection($config);
+        $config = [];
+
+        switch ($name) {
+            case 'client':
+                return new Connection([
+                    'host' => '',
+                    'port' => '',
+                    'settings' => [
+                        'timeout' => 1,
+                    ],
+                ]);
         }
 
-        throw new InvalidArgumentException("Unsupported driver [{$config['driver']}]");
+        throw new InvalidArgumentException("Unsupported driver [{$name}]");
     }
 }

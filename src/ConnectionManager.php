@@ -36,7 +36,10 @@ class ConnectionManager
      */
     public function connection($name = null): self
     {
-        $this->connection = $this->manager->connection($name);
+        if (is_null($this->connection)) {
+            $this->connection = $this->manager->connection($name);
+        }
+
         return $this;
     }
 
@@ -47,6 +50,14 @@ class ConnectionManager
     {
         $this->manager->disconnection($this->connection);
         $this->connection = null;
+    }
+
+    /**
+     * @return Connection
+     */
+    public function getConnection(): Connection
+    {
+        return $this->connection;
     }
 
     /**

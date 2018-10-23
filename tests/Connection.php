@@ -17,11 +17,11 @@ class Connection extends AbstractConnection implements ConnectionContract
      */
     protected $connector;
 
-    public function connect(): Client
+    public function connect()
     {
-        $settings = $this->config;
+        /*$settings = $this->config;
         $settings['base_uri'] = $this->baseUri('http',$this->config);
-        return new Client($settings);
+        return new Client($settings);*/
     }
 
     /**

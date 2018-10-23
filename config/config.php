@@ -9,7 +9,7 @@ return [
     |
     */
 
-    'default' => 'client',
+    'default' => 'default',
 
     /*
     |--------------------------------------------------------------------------
@@ -24,14 +24,14 @@ return [
     */
 
     'connections' => [
-        'client' => [
+        'default' => [
             'pool' => [
                 'max_idle_number' => 1000,
                 'min_idle_number' => 100,
                 'max_connection_number' => 800,
             ],
             'factory' => 'You\'s factory',
-            'connection' => 'You\'s default connection',
+            //'connection' => 'You\'s default connection',
         ],
     ],
 ];
