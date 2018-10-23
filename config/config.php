@@ -20,7 +20,6 @@ return [
     | max_idle_number: maximum number of idles
     | min_idle_number: minimum number of idles
     | max_connection_number: maximum number of connections
-    | max_connection_time: maximum connection time (seconds)
     |
     */
 
@@ -30,10 +29,9 @@ return [
                 'max_idle_number' => 1000,
                 'min_idle_number' => 100,
                 'max_connection_number' => 800,
-                'max_connection_time' => 1,
             ],
-            'factory' => 'factory',
-            'connection' => 'http',
+            'factory' => 'You\'s factory',
+            'connection' => 'You\'s default connection',
         ],
     ],
 ];

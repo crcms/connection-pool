@@ -1,9 +1,8 @@
 <?php
 
-namespace CrCms\Foundation\ConnectionPool\Tests;
+namespace CrCms\Tests\ConnectionPool;
 
 use CrCms\Foundation\ConnectionPool\AbstractConnection;
-use CrCms\Foundation\ConnectionPool\Contracts\Connector;
 use CrCms\Foundation\ConnectionPool\Contracts\Connection as ConnectionContract;
 use GuzzleHttp\Client;
 
@@ -21,7 +20,7 @@ class Connection extends AbstractConnection implements ConnectionContract
     public function connect(): Client
     {
         $settings = $this->config;
-        $settings['base_uri'] = $this->baseUri($this->config);
+        $settings['base_uri'] = $this->baseUri('http',$this->config);
         return new Client($settings);
     }
 
@@ -34,4 +33,11 @@ class Connection extends AbstractConnection implements ConnectionContract
     {
         return $scheme . '://' . $config['host'] . ':' . $config['port'];
     }
+
+    public function handle(...$params)
+    {
+        // TODO: Implement handle() method.
+    }
+
+
 }

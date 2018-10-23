@@ -64,14 +64,14 @@ class PoolServiceProvider extends ServiceProvider
     }
 
     /**
-     *
+     * @return void
      */
-    protected function registerConnectionServices()
+    protected function registerConnectionServices(): void
     {
         $this->app->bind('pool.pool',ConnectionPool::class);
 
         $this->app->singleton('pool.manager', function ($app) {
-            return new ConnectionManager($app);
+            return new PoolManager($app);
         });
     }
 
@@ -81,7 +81,7 @@ class PoolServiceProvider extends ServiceProvider
     protected function registerAlias(): void
     {
         $this->app->alias('pool.pool', ConnectionPoolContract::class);
-        $this->app->alias('pool.manager', ConnectionManager::class);
+        $this->app->alias('pool.manager', PoolManager::class);
     }
 
     /**
@@ -101,6 +101,5 @@ class PoolServiceProvider extends ServiceProvider
             'pool.pool',
             'pool.manager'
         ];
-//        return parent::provides();
     }
 }

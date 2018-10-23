@@ -23,21 +23,6 @@ interface Connection
     /**
      * @return bool
      */
-    public function isRelease(): bool;
-
-    /**
-     * @return void
-     */
-    public function makeRelease(): void;
-
-    /**
-     * @return void
-     */
-    public function makeActive(): void;
-
-    /**
-     * @return bool
-     */
     public function isAlive(): bool;
 
     /**
@@ -66,10 +51,10 @@ interface Connection
     public function disconnect(): void;
 
     /**
-     * @param callable $callable
+     * @param mixed ...$params
      * @return mixed
      */
-    public function handle(callable $callable);
+    public function handle(...$params);
 
     /**
      * @return int

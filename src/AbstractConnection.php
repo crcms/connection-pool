@@ -44,13 +44,6 @@ abstract class AbstractConnection implements ConnectionContract
     protected $isAlive = true;
 
     /**
-     * 是否释放资源
-     *
-     * @var bool
-     */
-    protected $isRelease = false;
-
-    /**
      * 最后活动时间
      *
      * @var int
@@ -72,7 +65,7 @@ abstract class AbstractConnection implements ConnectionContract
     {
         $this->config = $config;
         $this->connector = $this->reconnect();
-        $this->updateLaseActivityTime();
+        $this->updateLastActivityTime();
     }
 
     /**
@@ -124,34 +117,6 @@ abstract class AbstractConnection implements ConnectionContract
     }
 
     /**
-     * @return bool
-     */
-    public function isRelease(): bool
-    {
-        return $this->isRelease;
-    }
-
-    /**
-     * 释放连接
-     *
-     * @return void
-     */
-    public function makeRelease(): void
-    {
-        $this->isRelease = true;
-    }
-
-    /**
-     * 激活连接
-     *
-     * @return void
-     */
-    public function makeActive(): void
-    {
-        $this->isRelease = false;
-    }
-
-    /**
      * @return void
      */
     protected function updateLastActivityTime(): void
@@ -191,23 +156,6 @@ abstract class AbstractConnection implements ConnectionContract
     {
         $this->connector = null;
         $this->makeDead();
-    }
-
-    /**
-     * @param callable $callable
-     * @return mixed
-     */
-    public function handle(callable $callable)
-    {
-        $this->updateLastActivityTime();
-        $this->increaseConnectionNumber();
-
-        try {
-            return call_user_func($callable, $this);
-        } finally {
-            //回收资源
-            $this->makeRelease();
-        }
     }
 
     /**
