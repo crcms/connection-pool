@@ -25,9 +25,9 @@ return [
 
     'connections' => [
         'default' => [
-            'max_idle_number' => 1000,
-            'min_idle_number' => 100,
-            'max_connection_number' => 800,
+            'max_idle_number' => 50,
+            'min_idle_number' => 3,
+            'max_connection_number' => 50,
         ],
     ],
 ];
