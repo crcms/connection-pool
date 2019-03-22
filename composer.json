@@ -9,7 +9,16 @@
   "homepage": "https://github.com/crcms/connection-pool",
   "license": "MIT",
   "require": {
-    "php": ">=7.1"
+    "php": ">=7.1",
+    "ext-swoole": "^4.1"
+  },
+  "require-dev": {
+    "symfony/var-dumper": "^4.1",
+    "mockery/mockery": "^1.2",
+    "phpunit/phpunit": "^7.5",
+    "codedungeon/phpunit-result-printer": "^0.26.0",
+    "php-coveralls/php-coveralls": "^2.1",
+    "phpunit/php-code-coverage": "^6.0"
   },
   "autoload": {
     "files": [

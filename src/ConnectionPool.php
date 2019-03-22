@@ -11,9 +11,9 @@ namespace CrCms\Foundation\ConnectionPool;
 
 use CrCms\Foundation\ConnectionPool\Contracts\Connection;
 use CrCms\Foundation\ConnectionPool\Contracts\ConnectionPool as ConnectionPoolContract;
-use SplQueue;
 use SplObjectStorage;
 use OutOfBoundsException;
+use Swoole\Coroutine\Channel;
 
 /**
  * Class ConnectionPool
@@ -22,7 +22,7 @@ use OutOfBoundsException;
 class ConnectionPool implements ConnectionPoolContract
 {
     /**
-     * @var SplQueue
+     * @var Channel
      */
     protected $idleQueues;
 
@@ -34,9 +34,9 @@ class ConnectionPool implements ConnectionPoolContract
     /**
      * ConnectionPool constructor.
      */
-    public function __construct()
+    public function __construct($capacity = 10)
     {
-        $this->idleQueues = new SplQueue();
+        $this->idleQueues = new Channel($capacity);
         $this->tasks = new SplObjectStorage();
     }
 
@@ -54,7 +54,7 @@ class ConnectionPool implements ConnectionPoolContract
      */
     public function put(Connection $connection): void
     {
-        $this->idleQueues->enqueue($connection);
+        $this->idleQueues->push($connection);
     }
 
     /**
@@ -62,7 +62,7 @@ class ConnectionPool implements ConnectionPoolContract
      */
     public function get(): Connection
     {
-        if ($this->idleQueues->count() > 0) {
+        if ($this->idleQueues->length() > 0) {
             $connection = $this->idleQueues->pop();
             $this->tasks->attach($connection);
             return $connection;
@@ -87,7 +87,7 @@ class ConnectionPool implements ConnectionPoolContract
     public function release(Connection $connection): void
     {
         $this->tasks->detach($connection);
-        $this->idleQueues->enqueue($connection);
+        $this->idleQueues->push($connection);
     }
 
     /**
@@ -99,9 +99,9 @@ class ConnectionPool implements ConnectionPoolContract
     }
 
     /**
-     * @return SplQueue
+     * @return Channel
      */
-    public function getIdleQueues(): SplQueue
+    public function getIdleQueues(): Channel
     {
         return $this->idleQueues;
     }
@@ -119,6 +119,6 @@ class ConnectionPool implements ConnectionPoolContract
      */
     public function getIdleQueuesCount(): int
     {
-        return $this->idleQueues->count();
+        return $this->idleQueues->length();
     }
 }
